@@ -29,8 +29,6 @@
 #ifndef NOTMUCH_H
 #define NOTMUCH_H
 
-#ifndef __DOXYGEN__
-
 #ifdef  __cplusplus
 # define NOTMUCH_BEGIN_DECLS  extern "C" {
 # define NOTMUCH_END_DECLS    }
@@ -70,9 +68,6 @@ NOTMUCH_BEGIN_DECLS
 #else
 #define NOTMUCH_DEPRECATED(major, minor) __attribute__ ((deprecated))
 #endif
-
-
-#endif /* __DOXYGEN__ */
 
 /**
  * Check the version of the notmuch library being compiled against.
@@ -249,7 +244,6 @@ notmuch_status_to_string (notmuch_status_t status);
 
 /* Various opaque data types. For each notmuch_<foo>_t see the various
  * notmuch_<foo> functions below. */
-#ifndef __DOXYGEN__
 typedef struct _notmuch_database notmuch_database_t;
 typedef struct _notmuch_query notmuch_query_t;
 typedef struct _notmuch_threads notmuch_threads_t;
@@ -263,7 +257,6 @@ typedef struct _notmuch_config_list notmuch_config_list_t;
 typedef struct _notmuch_config_values notmuch_config_values_t;
 typedef struct _notmuch_config_pairs notmuch_config_pairs_t;
 typedef struct _notmuch_indexopts notmuch_indexopts_t;
-#endif /* __DOXYGEN__ */
 
 /**
  * Create a new, empty notmuch database located at 'path'.
