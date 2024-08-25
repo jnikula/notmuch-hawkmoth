@@ -63,6 +63,12 @@ if not tags.has('WITH_PYTHON'):
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+if tags.has('WITH_API_DOCS'):
+    extensions.append('hawkmoth')
+    hawkmoth_root = os.path.join(location, '..')
+else:
+    exclude_patterns.append('man3/notmuch.rst')
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -187,6 +193,13 @@ man_pages = [
      u'add/remove tags for all messages matching the search terms',
      [notmuch_authors], 1),
 ]
+
+if tags.has('WITH_API_DOCS'):
+    man_pages += [
+        ('man3/notmuch', 'notmuch',
+         u'notmuch library',
+         [notmuch_authors], 3),
+    ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False

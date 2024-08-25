@@ -922,17 +922,6 @@ if [ $WITH_EMACS = "1" ]; then
     fi
 fi
 
-have_doxygen=0
-if [ $WITH_API_DOCS = "1" ] ; then
-    printf "Checking if doxygen is available... "
-    if command -v doxygen > /dev/null; then
-	printf "Yes.\n"
-	have_doxygen=1
-    else
-	printf "No (so will not install api docs)\n"
-    fi
-fi
-
 have_ruby_dev=0
 if [ $WITH_RUBY = "1" ] ; then
     printf "Checking for ruby development files... "
@@ -968,6 +957,15 @@ if [ $WITH_DOCS = "1" ] ; then
 	have_install_info=1
     else
 	printf "No (so will not install info pages).\n"
+    fi
+    if [ $WITH_API_DOCS = "1" ] ; then
+	printf "Checking if hawkmoth is available... "
+	if ${python} -m hawkmoth -h > /dev/null 2>&1; then
+	    printf "Yes.\n"
+	else
+	    printf "No (so will not install api docs)\n"
+	    WITH_API_DOCS=0
+	fi
     fi
 fi
 
@@ -1428,8 +1426,8 @@ HAVE_MAKEINFO=${have_makeinfo}
 # Whether there's an install-info binary available for installing info format documentation
 HAVE_INSTALL_INFO=${have_install_info}
 
-# Whether there's a doxygen binary available for building api documentation
-HAVE_DOXYGEN=${have_doxygen}
+# Whether there's hawkmoth sphinx extension available for building api documentation
+WITH_API_DOCS=${WITH_API_DOCS}
 
 # The directory to which desktop files should be installed
 desktop_dir = \$(prefix)/share/applications
@@ -1654,6 +1652,9 @@ EOF
     fi
     if [ $WITH_PYTHON_DOCS = "1" ]; then
 	echo "tags.add('WITH_PYTHON')"
+    fi
+    if [ $WITH_API_DOCS = "1" ]; then
+        echo "tags.add('WITH_API_DOCS')"
     fi
     printf "rsti_dir = '%s'\n" "$(cd emacs && pwd -P)"
 } > sphinx.config

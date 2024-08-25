@@ -9,28 +9,33 @@ DOCBUILDDIR      := $(dir)/_build
 
 # Internal variables.
 ALLSPHINXOPTS   := $(SPHINXOPTS) $(srcdir)/$(dir)
-APIMAN		:= $(DOCBUILDDIR)/man/man3/notmuch.3
-DOXYFILE	:= $(srcdir)/$(dir)/doxygen.cfg
 
 MAN1_RST := $(wildcard $(srcdir)/doc/man1/*.rst)
+ifeq ($(WITH_API_DOCS),1)
+	MAN3_RST := $(wildcard $(srcdir)/doc/man3/*.rst)
+else
+	MAN3_RST :=
+endif
 MAN5_RST := $(wildcard $(srcdir)/doc/man5/*.rst)
 MAN7_RST := $(wildcard $(srcdir)/doc/man7/*.rst)
-MAN_RST_FILES := $(MAN1_RST) $(MAN5_RST) $(MAN7_RST)
+MAN_RST_FILES := $(MAN1_RST) $(MAN3_RST) $(MAN5_RST) $(MAN7_RST)
 ALL_RST_FILES := $(MAN_RST_FILES) $(srcdir)/doc/notmuch-emacs.rst
 
 COPY_ROFF1 := $(patsubst %,$(DOCBUILDDIR)/man/man1/%.1,nmbug notmuch-setup)
 MAN1_ROFF := $(patsubst $(srcdir)/doc/%,$(DOCBUILDDIR)/man/%,$(MAN1_RST:.rst=.1))
 MAN1_ROFF := $(MAN1_ROFF) $(COPY_ROFF1)
+MAN3_ROFF := $(patsubst $(srcdir)/doc/%,$(DOCBUILDDIR)/man/%,$(MAN3_RST:.rst=.3))
 MAN5_ROFF := $(patsubst $(srcdir)/doc/%,$(DOCBUILDDIR)/man/%,$(MAN5_RST:.rst=.5))
 MAN7_ROFF := $(patsubst $(srcdir)/doc/%,$(DOCBUILDDIR)/man/%,$(MAN7_RST:.rst=.7))
-MAN_ROFF_FILES := $(MAN1_ROFF) $(MAN5_ROFF) $(MAN7_ROFF)
+MAN_ROFF_FILES := $(MAN1_ROFF) $(MAN3_ROFF) $(MAN5_ROFF) $(MAN7_ROFF)
 
 MAN_GZIP_FILES := $(addsuffix .gz,${MAN_ROFF_FILES})
 
 MAN1_TEXI := $(patsubst $(srcdir)/doc/man1/%.rst,$(DOCBUILDDIR)/texinfo/%.texi,$(MAN1_RST))
+MAN3_TEXI := $(patsubst $(srcdir)/doc/man3/%.rst,$(DOCBUILDDIR)/texinfo/%.texi,$(MAN3_RST))
 MAN5_TEXI := $(patsubst $(srcdir)/doc/man5/%.rst,$(DOCBUILDDIR)/texinfo/%.texi,$(MAN5_RST))
 MAN7_TEXI := $(patsubst $(srcdir)/doc/man7/%.rst,$(DOCBUILDDIR)/texinfo/%.texi,$(MAN7_RST))
-INFO_TEXI_FILES := $(MAN1_TEXI) $(MAN5_TEXI) $(MAN7_TEXI)
+INFO_TEXI_FILES := $(MAN1_TEXI) $(MAN3_TEXI) $(MAN5_TEXI) $(MAN7_TEXI)
 ifeq ($(WITH_EMACS),1)
 	INFO_TEXI_FILES += $(DOCBUILDDIR)/texinfo/notmuch-emacs.texi
 endif
@@ -40,7 +45,7 @@ INFO_INFO_FILES := $(INFO_TEXI_FILES:.texi=.info) $(COPY_INFO1)
 
 .PHONY: sphinx-html sphinx-texinfo sphinx-info
 
-.PHONY: install-man build-man apidocs install-apidocs
+.PHONY: install-man build-man
 
 %.gz: %
 	rm -f $@ && gzip --no-name --stdout $^ > $@
@@ -57,13 +62,13 @@ endif
 
 sphinx-html: $(DOCBUILDDIR)/.html.stamp
 
-$(DOCBUILDDIR)/.html.stamp: $(ALL_RST_FILES) $(DOC_PREREQS)
+$(DOCBUILDDIR)/.html.stamp: $(ALL_RST_FILES) $(DOC_PREREQS) lib/notmuch.h
 	$(SPHINXBUILD) -b html -d $(DOCBUILDDIR)/html_doctrees $(ALLSPHINXOPTS) $(DOCBUILDDIR)/html
 	touch $@
 
 sphinx-texinfo: $(DOCBUILDDIR)/.texi.stamp
 
-$(DOCBUILDDIR)/.texi.stamp: $(ALL_RST_FILES) $(DOC_PREREQS)
+$(DOCBUILDDIR)/.texi.stamp: $(ALL_RST_FILES) $(DOC_PREREQS) lib/notmuch.h
 	$(SPHINXBUILD) -b texinfo -d $(DOCBUILDDIR)/texinfo_doctrees $(ALLSPHINXOPTS) $(DOCBUILDDIR)/texinfo
 	touch $@
 
@@ -81,10 +86,10 @@ ${MAN_ROFF_FILES}: $(DOCBUILDDIR)/.roff.stamp
 # convey to make that a single invocation of this recipe builds all
 # of the roff files.  This prevents parallel make from starting an
 # instance of this recipe for each roff file.
-$(DOCBUILDDIR)/.roff.stamp: ${MAN_RST_FILES}
+$(DOCBUILDDIR)/.roff.stamp: ${MAN_RST_FILES} lib/notmuch.h
 ifeq ($(HAVE_SPHINX),1)
 	$(SPHINXBUILD) -b man -d $(DOCBUILDDIR)/man_doctrees $(ALLSPHINXOPTS) $(DOCBUILDDIR)/man
-	for section in 1 5 7; do \
+	for section in 1 3 5 7; do \
 	    mkdir -p $(DOCBUILDDIR)/man/man$${section}; \
 	    mv $(DOCBUILDDIR)/man/*.$${section} $(DOCBUILDDIR)/man/man$${section}; \
 	done
@@ -93,25 +98,6 @@ else
 	@false
 endif
 	touch $@
-
-install-man: install-apidocs
-
-ifeq ($(HAVE_DOXYGEN),1)
-MAN_GZIP_FILES += ${APIMAN}.gz
-apidocs: $(APIMAN)
-install-apidocs: ${APIMAN}.gz
-	mkdir -p "$(DESTDIR)$(mandir)/man3"
-	install -m0644 $(filter %.3.gz,$(MAN_GZIP_FILES)) $(DESTDIR)/$(mandir)/man3
-
-$(APIMAN): $(dir)/config.dox $(srcdir)/$(dir)/doxygen.cfg $(srcdir)/lib/notmuch.h
-	mkdir -p $(DOCBUILDDIR)/man/man3
-	doxygen $(DOXYFILE)
-	rm -f $(DOCBUILDDIR)/man/man3/_*.3
-	perl -pi -e 's/^[.]RI "\\fI/.RI "\\fP/' $(APIMAN)
-else
-apidocs:
-install-apidocs:
-endif
 
 # Do not try to build or install man pages if a man page converter is
 # not available.
@@ -133,6 +119,10 @@ install-man: ${MAN_GZIP_FILES}
 	install -m0644 $(filter %.1.gz,$(MAN_GZIP_FILES)) $(DESTDIR)/$(mandir)/man1
 	install -m0644 $(filter %.5.gz,$(MAN_GZIP_FILES)) $(DESTDIR)/$(mandir)/man5
 	install -m0644 $(filter %.7.gz,$(MAN_GZIP_FILES)) $(DESTDIR)/$(mandir)/man7
+ifeq ($(WITH_API_DOCS),1)
+	mkdir -m0755 -p "$(DESTDIR)$(mandir)/man3"
+	install -m0644 $(filter %.3.gz,$(MAN_GZIP_FILES)) $(DESTDIR)/$(mandir)/man3
+endif
 endif
 
 ifneq ($(HAVE_SPHINX)$(HAVE_MAKEINFO),11)
@@ -152,12 +142,8 @@ install-info: build-info
 	for file in $(INFO_INFO_FILES); do install-info $$file $(DESTDIR)$(infodir)/dir; done
 endif
 
-$(dir)/config.dox: version.stamp
-	echo "PROJECT_NAME = \"Notmuch $(VERSION)\"" > $@
-	echo "INPUT=${srcdir}/lib/notmuch.h" >> $@
-
 CLEAN := $(CLEAN) $(DOCBUILDDIR) $(DOCBUILDDIR)/.roff.stamp $(DOCBUILDDIR)/.texi.stamp
 CLEAN := $(CLEAN) $(DOCBUILDDIR)/.html.stamp $(DOCBUILDDIR)/.info.stamp
-CLEAN := $(CLEAN) $(MAN_GZIP_FILES) $(MAN_ROFF_FILES) $(dir)/conf.pyc $(dir)/config.dox
+CLEAN := $(CLEAN) $(MAN_GZIP_FILES) $(MAN_ROFF_FILES) $(dir)/conf.pyc
 
 CLEAN := $(CLEAN) $(dir)/__pycache__

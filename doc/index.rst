@@ -11,6 +11,7 @@ Content
    command-line
    queries
    notmuch-emacs
+   library
    python-bindings
    
 Index and search
