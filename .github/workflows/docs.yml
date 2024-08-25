@@ -1,0 +1,48 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - 'hawkmoth'
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies (apt)
+        run: sudo apt-get install -y python3-clang python3-pip libxapian-dev libgmime-3.0-dev libtalloc-dev zlib1g-dev
+      - name: Build docs
+        run: |
+          python3 -m venv --system-site-packages .venv
+          . .venv/bin/activate
+          pip install hawkmoth
+          ./configure
+          make sphinx-html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-artifact
+          path: doc/_build/html
+          if-no-files-found: error
+
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: build-docs
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: find
+      - run: mv docs-artifact/* .
+      - uses: actions/configure-pages@v3
+      - uses: actions/upload-pages-artifact@v1
+        with:
+           path: .
+      - id: deployment
+        uses: actions/deploy-pages@v1
