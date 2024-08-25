@@ -1,11 +1,14 @@
-If you're reading this on https://github.com/notmuch/notmuch, this is a
-read-only mirror of the notmuch project.
+Notmuch API Documentation with Hawkmoth
+=======================================
 
-For more information about the project, see https://notmuchmail.org.
+This repo contains notmuch_ library API documentation migration to
+hawkmoth_, primarily to showcase the `generated documentation`_, in
+particular for libnotmuch_.
 
-Please don't send us pull requests on github. If you have a feature
-branch that you want us to look at, use ``git send-email`` to send it
-to notmuch@notmuchmail.org.
+.. _notmuch: https://notmuchmail.org
 
-For more information about contributing to the project, see
-https://notmuchmail.org/contributing/.
+.. _hawkmoth: https://github.com/jnikula/hawkmoth/
+
+.. _generated documentation: https://jnikula.github.io/notmuch-hawkmoth/
+
+.. _libnotmuch: https://jnikula.github.io/notmuch-hawkmoth/man3/notmuch.html
